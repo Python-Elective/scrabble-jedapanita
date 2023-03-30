@@ -32,8 +32,7 @@ def load_words():
         word_list.append(line.strip().lower())
     print("  ", len(word_list), "words loaded.")
     return word_list
-
-
+allword = load_words()
 def get_frequency_dict(sequence):
     """
     Returns a dictionary where the keys are elements of the sequence
@@ -72,8 +71,18 @@ def get_word_score(word, n):
     returns: int >= 0
     """
     # TO DO ... <-- Remove this comment when you code this function
+    if not word: return 0
 
-
+    assert type(word) == str,       "type missing"
+    assert word.islower(),f"{word} Not lowercase"
+    assert len(word) > 0,       "word lenght must not be zero"
+    assert type(n) == int,      "n not int"
+    assert n >= 0,      "hand lenght must not be zero"
+    score = len(word) * sum([SCRABBLE_LETTER_VALUES[letter] for letter in word])
+    if len(word) == n:
+        score += 50
+    assert score >= 0,      "score is negative"
+    return score
 #
 # Problem #2: Make sure you understand how this function works and what it does!
 #
@@ -89,6 +98,7 @@ def display_hand(hand):
 
     hand: dictionary (string -> int)
     """
+    
     for letter in hand.keys():
         for j in range(hand[letter]):
             print(letter, end=" ")       # print all on the same line
@@ -146,8 +156,21 @@ def update_hand(hand, word):
     returns: dictionary (string -> int)
     """
     # TO DO ... <-- Remove this comment when you code this function
+    assert type(hand) == dict,      "Error type"
+    assert len(hand) > 0,       "Hand must be more than zero"
+    assert type(word) == str,       "Error type"
+    assert len(word) > 0,       "Word must be more than zero"
 
-
+    temp_hand = hand.copy()
+    for letter in word:
+            temp_hand[letter] -= 1
+    assert type(temp_hand) == dict,      "Error type"
+    return temp_hand
+'''
+hand = {'a': 1, 'q': 1, 'l': 2, 'm': 1, 'u': 1, 'i': 1}
+letter = "quail"
+print(update_hand(hand, letter))
+'''
 #
 # Problem #3: Test word validity
 #
@@ -163,7 +186,33 @@ def is_valid_word(word, hand, word_list):
     word_list: list of lowercase strings
     """
     # TO DO ... <-- Remove this comment when you code this function
+    assert type(hand) == dict,      "Error type"
+    assert len(hand) > 0,       "Hand must be more than zero"
+    assert type(word) == str,       "Error type"
+    assert len(word) > 0,       "Word must be more than zero"
+    assert type(word_list) == list, "Error type"
+    
+    copy_hand = hand.copy()
+    copy_word_list = word_list.copy()
+    for letter in word:
+        if letter not in hand:
+            return False
+        elif copy_hand[letter] > 0:
+            copy_hand[letter] -= 1
+        else:
+            return False
+        
+    if word in copy_word_list:
+        return True
+    else:
+        return False
 
+'''
+hand = {'a': 1, 'q': 1, 'l': 2, 'm': 1, 'u': 1, 'i': 1}
+letter = "quail"
+word_list = load_words()
+print(is_valid_word(letter, hand, word_list))
+'''
 
 #
 # Problem #4: Playing a hand
@@ -177,7 +226,15 @@ def calculate_hand_len(hand):
     returns: integer
     """
     # TO DO... <-- Remove this comment when you code this function
+    assert type(hand) == dict,      "Error type"
+    assert len(hand) > 0,       "Hand must be more than zero"
+    return sum(hand.values())
 
+'''
+hand = {'a': 1, 'q': 1, 'l': 2, 'm': 1, 'u': 1, 'i': 1}
+letter = "quail"
+print(calculate_hand_len(hand))
+'''
 
 def play_hand(hand, word_list, n):
     """
@@ -203,32 +260,30 @@ def play_hand(hand, word_list, n):
     """
     # BEGIN PSEUDOCODE <-- Remove this comment when you code this function; do your coding within the pseudocode (leaving those comments in-place!)
     # Keep track of the total score
-
     # As long as there are still letters left in the hand:
-
-    # Display the hand
-
-    # Ask user for input
-
-    # If the input is a single period:
-
-    # End the game (break out of the loop)
-
-    # Otherwise (the input is not a single period):
-
-    # If the word is not valid:
-
-    # Reject invalid word (print a message followed by a blank line)
-
-    # Otherwise (the word is valid):
-
-    # Tell the user how many points the word earned, and the updated total score, in one line followed by a blank line
-
-    # Update the hand
-
-    # Game is over (user entered a '.' or ran out of letters), so tell user the total score
-
-
+    display_hand(hand)
+    score = 0
+    while calculate_hand_len(hand) > 0:     
+        input_hand = input(f'Enter word, or a "." to indicate that you are finished: ')
+        if input_hand == ".":
+            print(f'Total scores: {score}')
+            break
+        elif is_valid_word(input_hand, hand, word_list) == False:
+            print(f'{input_hand} Not in word_list')
+            print(f'Total scores: {score}')
+        else:
+            score += get_word_score(input_hand, n)
+            print(get_word_score(input_hand, n))
+            print(f'Total scores: {score}')   
+            hand = update_hand(hand, input_hand)
+        display_hand(hand)
+    return score
+'''
+n = 7
+hand = deal_hand(n)
+word_list = load_words()
+play_hand(hand, word_list, n)
+'''
 #
 # Problem #5: Playing a game
 #
@@ -246,8 +301,24 @@ def play_game(word_list):
     2) When done playing the hand, repeat from step 1    
     """
     # TO DO ... <-- Remove this comment when you code this function
-    # <-- Remove this line when you code the function
-    print("play_game not yet implemented.")
+    hand = {}
+    last_hand = {}
+    while True:
+        check = input("Enter n to deal a new hand, r to replay the last hand, or e to end game: ")
+        assert type(check) == str, "check not a str"
+        n = 7
+        if check == "n":
+            hand = deal_hand(n)
+            last_hand = hand
+        elif check == "r":
+            if not last_hand:
+                print("no reply hand from last game")
+                continue
+            else:
+                hand = last_hand
+        elif check == "e":
+            return False
+        play_hand(hand, word_list, n)
 
 
 #
